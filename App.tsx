@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import { CountdownTimer } from './components/CountdownTimer';
 import { Curtain } from './components/Curtain';
 import { ShareButton } from './components/ShareButton';
-import { RealisticFireworks } from './components/Fireworks';
+import { Fireworks } from './components/Fireworks';
 import { GiftCardGenerator } from './components/GiftCardGenerator';
 import { calculateTimeLeft, getNextNewYear } from './utils/time';
 import { GEMINI_SYSTEM_PROMPT, THEME } from './constants';
@@ -15,6 +15,7 @@ import { PageState, TimeLeft } from './types';
 const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft(getNextNewYear()));
   const [pageState, setPageState] = useState<PageState>(PageState.COUNTDOWN);
+  const [isRevealing, setIsRevealing] = useState(false);
   const [aiMessage, setAiMessage] = useState<string>("The magic in new beginnings is truly the most powerful of them all.");
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -40,7 +41,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Sync countdown
   useEffect(() => {
     const timer = setInterval(() => {
       const nextTime = calculateTimeLeft(getNextNewYear());
@@ -55,195 +55,151 @@ const App: React.FC = () => {
   }, [pageState]);
 
   const handleReveal = async () => {
-    setPageState(PageState.CELEBRATION);
-    await fetchNewMessage();
-  };
-
-  const simulateMidnight = () => {
-    handleReveal();
+    setIsRevealing(true);
+    // Allow the "cool effect" animation to play before switching state
+    setTimeout(() => {
+      setPageState(PageState.CELEBRATION);
+      fetchNewMessage();
+    }, 1200);
   };
 
   const currentYear = useMemo(() => {
     const now = new Date();
     const nextYear = now.getFullYear() + 1;
-    // If it's already Jan 1st, show current year, otherwise show next year
     return now.getMonth() === 0 && now.getDate() === 1 ? now.getFullYear() : nextYear;
   }, []);
 
   return (
     <main className={`min-h-screen ${THEME.midnight} text-[#f8fafc] flex flex-col items-center justify-center relative overflow-hidden`}>
-      {/* Background Ambience (Stars) */}
-      <div className="absolute inset-0 z-0 pointer-events-none opacity-30">
-        {[...Array(40)].map((_, i) => (
+      {/* Starry Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
+        {[...Array(50)].map((_, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0.1, scale: 0.5 }}
-            animate={{ 
-              opacity: [0.1, 0.5, 0.1],
-              scale: [0.5, 1.2, 0.5],
-            }}
-            transition={{
-              duration: 4 + Math.random() * 4,
-              repeat: Infinity,
-              delay: Math.random() * 5
-            }}
+            initial={{ opacity: 0.1 }}
+            animate={{ opacity: [0.1, 0.6, 0.1] }}
+            transition={{ duration: 3 + Math.random() * 5, repeat: Infinity, delay: Math.random() * 5 }}
             style={{
               position: 'absolute',
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
             }}
           >
-            <Star className="text-yellow-500/40" size={Math.random() * 3 + 1} />
+            <Star className="text-white/40" size={Math.random() * 2 + 1} />
           </motion.div>
         ))}
       </div>
 
       <Curtain isOpen={pageState === PageState.CELEBRATION}>
-        {/* Fireworks are now the background for the celebration content */}
-        <RealisticFireworks />
+        <Fireworks />
         
         <div className="max-w-4xl w-full text-center space-y-12 relative z-10 px-4">
           <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
+            initial={{ y: 50, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            transition={{ duration: 1.5, delay: 0.8, ease: "easeOut" }}
             className="space-y-4"
           >
-            <span className="text-[#d4af37] font-cinzel text-sm md:text-xl tracking-[0.5em] uppercase block">A New Chapter Unfolds</span>
-            <h1 className="text-6xl md:text-9xl font-cinzel font-bold bg-gradient-to-b from-[#fde047] via-[#d4af37] to-[#92400e] bg-clip-text text-transparent drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]">
-              Happy {currentYear}
+            <span className="text-[#d4af37] font-cinzel text-sm md:text-xl tracking-[0.8em] uppercase block">A New Horizon Awaits</span>
+            <h1 className="text-6xl md:text-[10rem] font-cinzel font-bold bg-gradient-to-b from-[#fde047] via-[#d4af37] to-[#92400e] bg-clip-text text-transparent drop-shadow-[0_20px_20px_rgba(0,0,0,0.6)] leading-none">
+              {currentYear}
             </h1>
           </motion.div>
 
           <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 1.2, delay: 1.2 }}
+            initial={{ opacity: 0, filter: 'blur(20px)' }}
+            animate={{ opacity: 1, filter: 'blur(0px)' }}
+            transition={{ duration: 1.5, delay: 1.5 }}
             className="relative"
           >
-            <div className="bg-white/5 backdrop-blur-xl p-8 md:p-14 rounded-[2rem] border border-[#d4af37]/20 shadow-[0_0_50px_rgba(212,175,55,0.1)] group">
-              <Sparkles className="absolute top-6 left-6 text-[#d4af37]/30 group-hover:text-[#d4af37]/60 transition-colors" size={28} />
-              <Sparkles className="absolute bottom-6 right-6 text-[#d4af37]/30 group-hover:text-[#d4af37]/60 transition-colors" size={28} />
+            <div className="bg-white/5 backdrop-blur-3xl p-8 md:p-14 rounded-[3rem] border border-white/10 shadow-[0_0_80px_rgba(212,175,55,0.15)] group">
+              <Sparkles className="absolute -top-4 -left-4 text-[#d4af37] animate-pulse" size={32} />
+              <Sparkles className="absolute -bottom-4 -right-4 text-[#d4af37] animate-pulse" size={32} />
               
               <AnimatePresence mode="wait">
                 <motion.div
                   key={aiMessage}
-                  initial={{ opacity: 0, filter: 'blur(10px)' }}
-                  animate={{ opacity: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, filter: 'blur(10px)' }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <p className="text-2xl md:text-4xl font-light italic text-white/90 leading-relaxed font-cinzel tracking-wide">
+                  <p className="text-2xl md:text-4xl font-light italic text-white/95 leading-relaxed font-cinzel tracking-wider">
                     &ldquo;{aiMessage}&rdquo;
                   </p>
                 </motion.div>
               </AnimatePresence>
               
               <motion.button
-                whileHover={{ rotate: 180 }}
+                whileHover={{ rotate: 180, scale: 1.1 }}
                 transition={{ duration: 0.6 }}
                 onClick={fetchNewMessage}
                 disabled={isGenerating}
-                className="absolute -bottom-5 left-1/2 -translate-x-1/2 p-3 bg-[#1e293b] border border-[#d4af37]/30 rounded-full text-[#d4af37] hover:bg-[#334155] transition-all disabled:opacity-50"
-                title="Generate new wisdom"
+                className="absolute -bottom-6 left-1/2 -translate-x-1/2 p-4 bg-[#1e293b] border border-[#d4af37]/40 rounded-full text-[#d4af37] hover:bg-[#334155] transition-all disabled:opacity-50 shadow-2xl"
               >
-                <RefreshCw size={20} className={isGenerating ? "animate-spin" : ""} />
+                <RefreshCw size={24} className={isGenerating ? "animate-spin" : ""} />
               </motion.button>
             </div>
           </motion.div>
 
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1.8 }}
-            className="flex flex-col items-center gap-8 pt-4"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 1, delay: 2.2 }}
+            className="flex flex-col items-center gap-10 pt-8"
           >
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-6">
               <ShareButton />
               <GiftCardGenerator initialMessage={aiMessage} year={currentYear} />
-            </div>
-            
-            <div className="flex items-center gap-4 opacity-40">
-              <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-[#d4af37]" />
-              <p className="text-[10px] uppercase tracking-[0.4em] font-cinzel">Infinite Possibilities</p>
-              <div className="h-[1px] w-12 bg-gradient-to-l from-transparent to-[#d4af37]" />
             </div>
           </motion.div>
         </div>
       </Curtain>
 
-      {/* Persistent UI */}
-      <div className="absolute top-0 left-0 w-full p-6 md:p-10 flex justify-between items-center z-50">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="flex items-center gap-4"
-        >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#d4af37]/20 to-transparent flex items-center justify-center border border-[#d4af37]/30 shadow-inner">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
-            >
-              <Star size={18} className="text-[#d4af37]" fill="#d4af37" fillOpacity={0.2} />
-            </motion.div>
-          </div>
-          <div className="hidden sm:block">
-            <h3 className="font-cinzel text-xs tracking-[0.3em] text-[#d4af37] font-bold">CELESTIAL</h3>
-            <p className="text-[9px] text-white/30 tracking-[0.2em] uppercase">Gateway 1.0</p>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Countdown Overlay */}
       <AnimatePresence>
         {pageState === PageState.COUNTDOWN && (
           <motion.div
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 1.2, ease: "circIn" }}
-            className="fixed inset-0 z-40 flex flex-col items-center justify-center p-6"
+            animate={isRevealing ? { scale: 1.5, filter: 'blur(20px)', opacity: 0 } : {}}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            className="fixed inset-0 z-40 flex flex-col items-center justify-center p-6 bg-[#020617]"
           >
             <motion.div 
-              initial={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-10 max-w-3xl"
+              className="text-center space-y-12 max-w-4xl"
             >
               <div className="space-y-4">
                 <motion.div
-                  animate={{ opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 4, repeat: Infinity }}
+                  animate={{ letterSpacing: ["0.6em", "0.8em", "0.6em"] }}
+                  transition={{ duration: 6, repeat: Infinity }}
                   className="text-[#d4af37] font-cinzel text-sm md:text-base tracking-[0.6em] uppercase"
                 >
-                  A New Dawn Approaches
+                  The Celestial Alignment Begins
                 </motion.div>
-                <h1 className="text-4xl md:text-6xl font-cinzel font-light text-white tracking-tight leading-tight">
-                  The New Year is <span className="text-[#d4af37]">Almost Here</span>
+                <h1 className="text-5xl md:text-8xl font-cinzel font-light text-white tracking-tighter">
+                  Eternity is <span className="text-[#d4af37] font-bold">Calling</span>
                 </h1>
               </div>
 
               <div className="relative group">
-                <div className="absolute inset-0 bg-[#d4af37]/5 blur-3xl rounded-full scale-110 group-hover:scale-125 transition-transform duration-1000" />
-                <div className="relative py-14 px-8 md:px-12 bg-white/[0.02] backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-2xl">
+                <div className="absolute inset-0 bg-[#d4af37]/5 blur-[100px] rounded-full scale-125 transition-transform duration-1000" />
+                <div className="relative py-16 px-10 md:px-20 bg-white/[0.03] backdrop-blur-2xl rounded-[3rem] border border-white/10 shadow-[0_0_100px_rgba(212,175,55,0.05)]">
                   <CountdownTimer timeLeft={timeLeft} />
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-6">
-                 <motion.button 
-                  whileHover={{ scale: 1.05, backgroundColor: "rgba(212, 175, 55, 0.15)" }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={simulateMidnight}
-                  className="px-10 py-4 rounded-full border border-[#d4af37]/40 text-[#d4af37] font-cinzel text-xs tracking-[0.4em] transition-all"
-                >
-                  REVEAL MAGIC
-                </motion.button>
-                <p className="text-[10px] uppercase tracking-[0.4em] text-white/30">Auto-unlock at the stroke of midnight</p>
-              </div>
+              <motion.button 
+                whileHover={{ scale: 1.05, letterSpacing: "0.5em" }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleReveal}
+                className="px-14 py-5 rounded-full bg-gradient-to-r from-[#92400e] via-[#d4af37] to-[#92400e] text-[#020617] font-cinzel font-bold text-sm tracking-[0.4em] transition-all shadow-[0_0_40px_rgba(212,175,55,0.3)] hover:shadow-[0_0_60px_rgba(212,175,55,0.5)]"
+              >
+                UNVEIL THE NEW YEAR
+              </motion.button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="fixed bottom-0 left-0 w-full h-40 bg-gradient-to-t from-[#020617] to-transparent pointer-events-none z-10" />
     </main>
   );
 };
