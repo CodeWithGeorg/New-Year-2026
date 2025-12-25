@@ -10,59 +10,49 @@ export const RealisticFireworks: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // --- Sizing ---
     let width = window.innerWidth;
     let height = window.innerHeight;
     
-    // Resize handler
     const handleResize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
       canvas.width = width;
       canvas.height = height;
     };
-    
     handleResize();
     window.addEventListener('resize', handleResize);
 
     // --- Configuration ---
-    const gravity = 0.04;
-    const friction = 0.96; // simulates air resistance
-    const particlesPerExplosion = 80; // MUCH higher than DOM methods
+    // Standard physics
+    const defaultGravity = 0.04;
+    const defaultFriction = 0.99; 
+    
+    // Counts
+    const particlesPerExplosion = 70; 
+    const particlesPerClick = 200; 
+
+    // Timers
+    // Approx 2 seconds assuming 60fps (2 * 60 = 120)
+    const centralExplosionTimerTotal = 120; 
     
     // --- State ---
     let fireworks: Firework[] = [];
     let particles: Particle[] = [];
+    let mouse = { x: 0, y: 0, isMoving: false };
 
     // --- Utility ---
     const random = (min: number, max: number) => Math.random() * (max - min) + min;
 
     // --- Classes ---
-
-    // The "Rocket" that shoots up
     class Firework {
-      x: number;
-      y: number;
-      sx: number; // start x
-      sy: number; // start y
-      tx: number; // target x
-      ty: number; // target y
-      distanceToTarget: number;
-      distanceTraveled: number;
+      x: number; y: number; sx: number; sy: number; tx: number; ty: number;
+      distanceToTarget: number; distanceTraveled: number;
       coordinates: [number, number][];
-      angle: number;
-      speed: number;
-      acceleration: number;
-      brightness: number;
-      targetRadius: number;
-      hue: number;
+      angle: number; speed: number; acceleration: number; brightness: number; targetRadius: number; hue: number;
 
       constructor(sx: number, sy: number, tx: number, ty: number) {
-        this.x = sx;
-        this.y = sy;
-        this.sx = sx;
-        this.sy = sy;
-        this.tx = tx;
-        this.ty = ty;
+        this.x = sx; this.y = sy; this.sx = sx; this.sy = sy; this.tx = tx; this.ty = ty;
         this.distanceToTarget = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
         this.distanceTraveled = 0;
         this.coordinates = [];
@@ -71,46 +61,31 @@ export const RealisticFireworks: React.FC = () => {
         this.acceleration = 1.05;
         this.brightness = random(50, 70);
         this.targetRadius = 1;
-        this.hue = random(0, 360); // Random color
-
-        // Create trail history
-        for (let i = 0; i < 3; i++) {
-          this.coordinates.push([sx, sy]);
-        }
+        this.hue = random(0, 360);
+        for (let i = 0; i < 3; i++) this.coordinates.push([sx, sy]);
       }
 
       update(index: number) {
-        // Remove last coordinate, add current
         this.coordinates.pop();
         this.coordinates.unshift([this.x, this.y]);
-
-        // Cycle target circle radius
-        if (this.targetRadius < 8) this.targetRadius += 0.3;
-        else this.targetRadius = 1;
-
-        // Speed up
+        if (this.targetRadius < 8) this.targetRadius += 0.3; else this.targetRadius = 1;
         this.speed *= this.acceleration;
-
-        // Velocity
         const vx = Math.cos(this.angle) * this.speed;
         const vy = Math.sin(this.angle) * this.speed;
-
         this.distanceTraveled = Math.sqrt(Math.pow(this.sx - this.x, 2) + Math.pow(this.sy - this.y, 2));
 
         if (this.distanceTraveled >= this.distanceToTarget) {
-          // Reached target -> Explode!
-          createParticles(this.tx, this.ty, this.hue);
+          // Standard explosion
+          createParticles(this.tx, this.ty, this.hue, particlesPerExplosion);
           fireworks.splice(index, 1);
         } else {
-          this.x += vx;
-          this.y += vy;
+          this.x += vx; this.y += vy;
         }
       }
 
       draw() {
         if (!ctx) return;
         ctx.beginPath();
-        // Draw trail
         ctx.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
         ctx.lineTo(this.x, this.y);
         ctx.strokeStyle = `hsl(${this.hue}, 100%, ${this.brightness}%)`;
@@ -118,56 +93,40 @@ export const RealisticFireworks: React.FC = () => {
       }
     }
 
-    // The explosion debris
     class Particle {
-      x: number;
-      y: number;
+      x: number; y: number;
       coordinates: [number, number][];
-      angle: number;
-      speed: number;
-      friction: number;
-      gravity: number;
-      hue: number;
-      brightness: number;
-      alpha: number;
-      decay: number;
+      angle: number; speed: number; friction: number; gravity: number; hue: number; brightness: number; alpha: number; decay: number;
 
-      constructor(x: number, y: number, hue: number) {
-        this.x = x;
-        this.y = y;
+      // Modified constructor to accept physics overrides
+      constructor(x: number, y: number, hue: number, speedOverride?: number, frictionOverride?: number, gravityOverride?: number, decayOverride?: number) {
+        this.x = x; this.y = y;
         this.coordinates = [];
-        for (let i = 0; i < 5; i++) {
-          this.coordinates.push([x, y]);
-        }
+        for (let i = 0; i < 5; i++) this.coordinates.push([x, y]);
         
-        // Random explosion angle
         this.angle = random(0, Math.PI * 2);
-        this.speed = random(1, 10); // Varied explosive force
-        this.friction = friction;
-        this.gravity = gravity;
+        // Use override speed if provided, else standard random(1,10)
+        this.speed = speedOverride !== undefined ? speedOverride : random(1, 10);
+        // Use override friction if provided, else standard
+        this.friction = frictionOverride !== undefined ? frictionOverride : defaultFriction;
+        // Use override gravity if provided, else standard
+        this.gravity = gravityOverride !== undefined ? gravityOverride : defaultGravity;
         
-        // Add variation to hue for realism
         this.hue = random(hue - 20, hue + 20);
         this.brightness = random(50, 80);
         this.alpha = 1;
-        
-        // How fast it fades
-        this.decay = random(0.015, 0.03);
+        // Use override decay if provided, else standard
+        this.decay = decayOverride !== undefined ? decayOverride : random(0.015, 0.03);
       }
 
       update(index: number) {
         this.coordinates.pop();
         this.coordinates.unshift([this.x, this.y]);
-
         this.speed *= this.friction;
         this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed + this.gravity; // Add gravity
-
+        this.y += Math.sin(this.angle) * this.speed + this.gravity;
         this.alpha -= this.decay;
-
-        if (this.alpha <= this.decay) {
-          particles.splice(index, 1);
-        }
+        if (this.alpha <= this.decay) particles.splice(index, 1);
       }
 
       draw() {
@@ -182,54 +141,76 @@ export const RealisticFireworks: React.FC = () => {
 
     // --- Logic ---
 
-    function createParticles(x: number, y: number, hue: number) {
-      for (let i = 0; i < particlesPerExplosion; i++) {
-        particles.push(new Particle(x, y, hue));
+    // Helper for standard particles
+    function createParticles(x: number, y: number, hue: number, count: number, speedMult = 1) {
+      for (let i = 0; i < count; i++) {
+        // Note: Passing undefined for friction/gravity to use defaults
+        particles.push(new Particle(x, y, hue, random(1, 10) * speedMult));
       }
     }
 
-    // Automatic Launch loop
-    let timerTick = 0;
-    let timerTotal = 40; // Frequency of auto-launches
-    let limiterTick = 0;
-    let limiterTotal = 5; // Click limitation
+    // NEW: Helper for the massive central explosion
+    function launchMassiveCentralExplosion() {
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const hue = random(0, 360); // A distinct color for the big one
+        // Massive count to cover screen
+        const count = 600; 
+
+        for (let i = 0; i < count; i++) {
+             // CUSTOM PHYSICS for massive expansion:
+             // 1. High Speed: random(20, 40) ensures it reaches screen edges quickly
+             // 2. Low Friction: 0.995 means it doesn't slow down much
+             // 3. Low Gravity: 0.01 means it stays relatively centered vertically
+             // 4. Slow Decay: random(0.003, 0.008) means it lasts longer
+            particles.push(new Particle(
+                centerX, 
+                centerY, 
+                hue, 
+                random(20, 40), // Speed override
+                0.995, // Friction override (very low drag)
+                0.01,  // Gravity override (very low gravity)
+                random(0.003, 0.008) // Decay override (slow fade)
+            ));
+        }
+    }
+
+    let standardTimerTick = 0;
+    let standardTimerTotal = 30; // Frequency of standard small launches
+    let centralTimerTick = 0;
 
     const loop = () => {
-      // 1. Clear canvas BUT leave a trail (ghosting effect)
-      // This is the secret to realistic light trails
       ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // Adjust alpha for trail length
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
       ctx.fillRect(0, 0, width, height);
-
-      // 2. Set blend mode to 'lighter' for glowing effect
       ctx.globalCompositeOperation = 'lighter';
 
-      // 3. Update/Draw Fireworks (Rockets)
       let i = fireworks.length;
-      while (i--) {
-        fireworks[i].draw();
-        fireworks[i].update(i);
-      }
+      while (i--) { fireworks[i].draw(); fireworks[i].update(i); }
 
-      // 4. Update/Draw Particles (Explosions)
       let j = particles.length;
-      while (j--) {
-        particles[j].draw();
-        particles[j].update(j);
+      while (j--) { particles[j].draw(); particles[j].update(j); }
+
+      // Cursor Sparkler
+      if (mouse.isMoving) {
+        createParticles(mouse.x, mouse.y, random(0, 360), 3, 0.6); 
+        mouse.isMoving = false;
       }
 
-      // 5. Auto Launch logic
-      if (timerTick >= timerTotal) {
-        // Launch a rocket from bottom center(ish) to random spot
-        const startX = width / 2 + random(-200, 200); // Varied launch x
-        const startY = height;
-        const targetX = random(0, width);
-        const targetY = random(0, height / 2); // Top half of screen
-        
-        fireworks.push(new Firework(startX, startY, targetX, targetY));
-        timerTick = 0;
+      // Logic used for standard small auto-launches
+      if (standardTimerTick >= standardTimerTotal) {
+        fireworks.push(new Firework(width / 2 + random(-200, 200), height, random(0, width), random(0, height / 2)));
+        standardTimerTick = 0;
       } else {
-        timerTick++;
+        standardTimerTick++;
+      }
+
+      // NEW Logic for the massive central 2-second explosion
+      if (centralTimerTick >= centralExplosionTimerTotal) {
+          launchMassiveCentralExplosion();
+          centralTimerTick = 0;
+      } else {
+          centralTimerTick++;
       }
 
       requestAnimationFrame(loop);
@@ -237,26 +218,29 @@ export const RealisticFireworks: React.FC = () => {
 
     const animationId = requestAnimationFrame(loop);
 
-    // Optional: Mouse click launches
+    // --- Event Listeners ---
     const handleClick = (e: MouseEvent) => {
-      fireworks.push(new Firework(width / 2, height, e.clientX, e.clientY));
+      createParticles(e.clientX, e.clientY, random(0, 360), particlesPerClick, 1.5);
     };
-    canvas.addEventListener('mousedown', handleClick);
+
+    const handleMouseMove = (e: MouseEvent) => {
+        mouse.x = e.clientX; mouse.y = e.clientY; mouse.isMoving = true;
+    };
+
+    window.addEventListener('mousedown', handleClick);
+    window.addEventListener('mousemove', handleMouseMove);
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      canvas.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationId);
     };
   }, []);
 
   return (
-    <div className="fixed inset-0 bg-black z-0 pointer-events-none">
-       {/* Set pointer-events-auto if you want the click-to-explode feature */}
-      <canvas 
-        ref={canvasRef} 
-        className="block w-full h-full"
-      />
+    <div className="fixed inset-0 pointer-events-none z-50 bg-transparent">
+      <canvas ref={canvasRef} className="block w-full h-full"/>
     </div>
   );
 };
