@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import { CountdownTimer } from './components/CountdownTimer';
 import { Curtain } from './components/Curtain';
 import { ShareButton } from './components/ShareButton';
-import { Fireworks } from './components/Fireworks';
+import { RealisticFireworks } from './components/Fireworks';
 import { GiftCardGenerator } from './components/GiftCardGenerator';
 import { calculateTimeLeft, getNextNewYear } from './utils/time';
 import { GEMINI_SYSTEM_PROMPT, THEME } from './constants';
@@ -100,7 +100,7 @@ const App: React.FC = () => {
 
       <Curtain isOpen={pageState === PageState.CELEBRATION}>
         {/* Fireworks are now the background for the celebration content */}
-        <Fireworks />
+        <RealisticFireworks />
         
         <div className="max-w-4xl w-full text-center space-y-12 relative z-10 px-4">
           <motion.div
