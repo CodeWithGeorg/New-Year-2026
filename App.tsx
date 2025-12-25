@@ -7,6 +7,7 @@ import { CountdownTimer } from './components/CountdownTimer';
 import { Curtain } from './components/Curtain';
 import { ShareButton } from './components/ShareButton';
 import { Confetti } from './components/Confetti';
+import { GiftCardGenerator } from './components/GiftCardGenerator';
 import { calculateTimeLeft, getNextNewYear } from './utils/time';
 import { GEMINI_SYSTEM_PROMPT, THEME } from './constants';
 import { PageState, TimeLeft } from './types';
@@ -154,7 +155,12 @@ const App: React.FC = () => {
             transition={{ duration: 0.8, delay: 1.8 }}
             className="flex flex-col items-center gap-8 pt-4"
           >
-            <ShareButton />
+            <div className="flex flex-wrap justify-center gap-4">
+              <ShareButton />
+              {/* FIX: Change 'message' to 'initialMessage' to match GiftCardGeneratorProps defined in components/GiftCardGenerator.tsx */}
+              <GiftCardGenerator initialMessage={aiMessage} year={currentYear} />
+            </div>
+            
             <div className="flex items-center gap-4 opacity-40">
               <div className="h-[1px] w-12 bg-gradient-to-r from-transparent to-[#d4af37]" />
               <p className="text-[10px] uppercase tracking-[0.4em] font-cinzel">Infinite Possibilities</p>
