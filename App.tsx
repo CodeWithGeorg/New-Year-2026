@@ -6,7 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import { CountdownTimer } from './components/CountdownTimer';
 import { Curtain } from './components/Curtain';
 import { ShareButton } from './components/ShareButton';
-import { Confetti } from './components/Confetti';
+import { Fireworks } from './components/Fireworks';
 import { GiftCardGenerator } from './components/GiftCardGenerator';
 import { calculateTimeLeft, getNextNewYear } from './utils/time';
 import { GEMINI_SYSTEM_PROMPT, THEME } from './constants';
@@ -65,7 +65,9 @@ const App: React.FC = () => {
 
   const currentYear = useMemo(() => {
     const now = new Date();
-    return now.getMonth() === 0 && now.getDate() === 1 ? now.getFullYear() : now.getFullYear() + 1;
+    const nextYear = now.getFullYear() + 1;
+    // If it's already Jan 1st, show current year, otherwise show next year
+    return now.getMonth() === 0 && now.getDate() === 1 ? now.getFullYear() : nextYear;
   }, []);
 
   return (
@@ -97,9 +99,10 @@ const App: React.FC = () => {
       </div>
 
       <Curtain isOpen={pageState === PageState.CELEBRATION}>
+        {/* Fireworks are now the background for the celebration content */}
+        <Fireworks />
+        
         <div className="max-w-4xl w-full text-center space-y-12 relative z-10 px-4">
-          <Confetti />
-          
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -157,7 +160,6 @@ const App: React.FC = () => {
           >
             <div className="flex flex-wrap justify-center gap-4">
               <ShareButton />
-              {/* FIX: Change 'message' to 'initialMessage' to match GiftCardGeneratorProps defined in components/GiftCardGenerator.tsx */}
               <GiftCardGenerator initialMessage={aiMessage} year={currentYear} />
             </div>
             
@@ -211,10 +213,10 @@ const App: React.FC = () => {
                   transition={{ duration: 4, repeat: Infinity }}
                   className="text-[#d4af37] font-cinzel text-sm md:text-base tracking-[0.6em] uppercase"
                 >
-                  The Great Transition
+                  A New Dawn Approaches
                 </motion.div>
                 <h1 className="text-4xl md:text-6xl font-cinzel font-light text-white tracking-tight leading-tight">
-                  Prepare for the <span className="text-[#d4af37]">Horizon</span>
+                  The New Year is <span className="text-[#d4af37]">Almost Here</span>
                 </h1>
               </div>
 
@@ -232,7 +234,7 @@ const App: React.FC = () => {
                   onClick={simulateMidnight}
                   className="px-10 py-4 rounded-full border border-[#d4af37]/40 text-[#d4af37] font-cinzel text-xs tracking-[0.4em] transition-all"
                 >
-                  REVEAL NOW
+                  REVEAL MAGIC
                 </motion.button>
                 <p className="text-[10px] uppercase tracking-[0.4em] text-white/30">Auto-unlock at the stroke of midnight</p>
               </div>
