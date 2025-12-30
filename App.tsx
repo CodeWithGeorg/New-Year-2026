@@ -32,6 +32,16 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const shareUrl = useMemo(() => {
+    const url = new URL(window.location.href);
+    if (senderName) {
+      url.searchParams.set('from', encodeURIComponent(senderName));
+    } else {
+      url.searchParams.delete('from');
+    }
+    return url.toString();
+  }, [senderName]);
+
   const fetchNewMessage = useCallback(async () => {
     setIsGenerating(true);
     try {
@@ -227,7 +237,7 @@ const App: React.FC = () => {
 
                 <div className="flex flex-col items-center gap-10 pt-8 pb-20">
                   <div className="flex flex-wrap justify-center gap-6">
-                    <ShareButton senderName={senderName} />
+                    <ShareButton senderName={senderName} shareUrl={shareUrl} />
                     <GiftCardGenerator initialMessage={aiMessage} year={currentYear} senderName={senderName} />
                   </div>
                 </div>
@@ -303,7 +313,7 @@ const App: React.FC = () => {
                         className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm font-cinzel tracking-widest focus:outline-none focus:border-[#d4af37]/40 transition-all text-white placeholder:text-white/20"
                       />
                     </div>
-                    <ShareButton senderName={senderName} />
+                    <ShareButton senderName={senderName} shareUrl={shareUrl} />
                   </div>
 {/* 
                   <motion.button 
