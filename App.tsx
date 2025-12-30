@@ -23,23 +23,19 @@ const App: React.FC = () => {
   const [sharedFrom, setSharedFrom] = useState<string | null>(null);
   const [isDemoActive, setIsDemoActive] = useState(false);
 
-  // Extract name from URL on mount
+  // Extract name from pathname on mount
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const from = params.get('from');
-    if (from) {
-      setSharedFrom(decodeURIComponent(from));
+    const path = window.location.pathname.slice(1);
+    if (path) {
+      setSharedFrom(decodeURIComponent(path));
     }
   }, []);
 
   const shareUrl = useMemo(() => {
-    const url = new URL(window.location.href);
-    if (senderName) {
-      url.searchParams.set('from', encodeURIComponent(senderName));
-    } else {
-      url.searchParams.delete('from');
+    if (!senderName) {
+      return window.location.origin + '/';
     }
-    return url.toString();
+    return window.location.origin + '/' + encodeURIComponent(senderName);
   }, [senderName]);
 
   const fetchNewMessage = useCallback(async () => {
@@ -315,8 +311,8 @@ const App: React.FC = () => {
                     </div>
                     <ShareButton senderName={senderName} shareUrl={shareUrl} />
                   </div>
-{/* 
-                  <motion.button 
+
+                  {/* <motion.button 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={startDemo}
