@@ -1,7 +1,6 @@
 
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// Added RefreshCw to imports
 import { Download, X, Gift, Palette, User, Sparkles, RefreshCw } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { GEMINI_SYSTEM_PROMPT } from '../constants';
@@ -9,6 +8,7 @@ import { GEMINI_SYSTEM_PROMPT } from '../constants';
 interface GiftCardGeneratorProps {
   initialMessage: string;
   year: number;
+  senderName: string;
 }
 
 type ThemeKey = 'gold' | 'silver' | 'rose' | 'aurora';
@@ -57,17 +57,20 @@ const THEMES: Record<ThemeKey, ThemeConfig> = {
   }
 };
 
-export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMessage, year }) => {
+export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMessage, year, senderName }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [message, setMessage] = useState(initialMessage);
-  const [userName, setUserName] = useState('');
+  const [localUserName, setLocalUserName] = useState(senderName || '');
   const [currentTheme, setCurrentTheme] = useState<ThemeKey>('gold');
   const svgRef = useRef<SVGSVGElement>(null);
 
   const theme = THEMES[currentTheme];
 
-  // Fetch a fresh message whenever the modal opens to ensure "each time" variety
+  useEffect(() => {
+    if (senderName) setLocalUserName(senderName);
+  }, [senderName]);
+
   const refreshMessage = useCallback(async () => {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -139,13 +142,13 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
             const pngUrl = canvas.toDataURL('image/png');
             const downloadLink = document.createElement('a');
             downloadLink.href = pngUrl;
-            downloadLink.download = `${userName || 'Celestial'}-New-Year-${year}.png`;
+            downloadLink.download = `${localUserName || 'Celestial'}-New-Year-${year}.png`;
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
           } catch (err) {
             console.error('Export failed:', err);
-            alert('Export blocked. Please try taking a screenshot or use a different browser.');
+            alert('Export failed. Please try a screenshot.');
           }
         }
         setIsDownloading(false);
@@ -168,7 +171,7 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
         className="flex items-center gap-2 px-6 py-3 border border-[#d4af37]/50 text-[#d4af37] rounded-full font-cinzel text-sm tracking-widest transition-all hover:bg-[#d4af37]/10"
       >
         <Gift size={18} />
-        <span>Personalize Your Gift</span>
+        <span>Create Gift Card</span>
       </motion.button>
 
       <AnimatePresence>
@@ -197,29 +200,27 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#d4af37]/20 to-transparent flex items-center justify-center border border-[#d4af37]/30 mb-6 shadow-lg">
                     <Sparkles className="text-[#d4af37]" size={32} />
                   </div>
-                  <h2 className="text-3xl md:text-4xl font-cinzel text-white font-bold mb-3 tracking-wide">Get Your New Year's Gift</h2>
-                  <p className="text-white/40 text-sm max-w-sm">A unique celestial message awaits. Personalize the signature and palette to reveal your token.</p>
+                  <h2 className="text-3xl md:text-4xl font-cinzel text-white font-bold mb-3 tracking-wide">Celestial Gift Card</h2>
+                  <p className="text-white/40 text-sm max-w-sm">Craft a beautiful keepsake with your name and a personalized message.</p>
                 </div>
 
                 <div className="space-y-8 text-left">
-                  {/* Name Input */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-[10px] font-cinzel uppercase tracking-[0.3em] text-white/50 px-1">
-                      <User size={12} /> Your Signature
+                      <User size={12} /> Your Name (From)
                     </label>
                     <input 
                       type="text"
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
+                      value={localUserName}
+                      onChange={(e) => setLocalUserName(e.target.value)}
                       placeholder="Enter your name..."
                       className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-[#d4af37]/50 focus:ring-1 focus:ring-[#d4af37]/20 transition-all text-lg"
                     />
                   </div>
 
-                  {/* Theme Selector */}
                   <div className="space-y-4">
                     <label className="flex items-center gap-2 text-[10px] font-cinzel uppercase tracking-[0.3em] text-white/50 px-1">
-                      <Palette size={12} /> Celestial Aura
+                      <Palette size={12} /> Design Palette
                     </label>
                     <div className="grid grid-cols-2 gap-4">
                       {(Object.keys(THEMES) as ThemeKey[]).map((t) => (
@@ -233,7 +234,7 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
                           }`}
                         >
                           <div 
-                            className="w-8 h-8 rounded-full shadow-inner border border-white/10 transition-transform group-hover:scale-110" 
+                            className="w-8 h-8 rounded-full border border-white/10 transition-transform group-hover:scale-110" 
                             style={{ background: `linear-gradient(135deg, ${THEMES[t].primary}, ${THEMES[t].secondary})` }}
                           />
                           <span className="text-xs text-white/80 font-cinzel tracking-wider uppercase">{THEMES[t].name}</span>
@@ -259,18 +260,15 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
                       ) : (
                         <motion.div key="ready" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3">
                           <Download size={24} />
-                          <span className="uppercase tracking-[0.2em] text-sm">Download My Gift</span>
+                          <span className="uppercase tracking-[0.2em] text-sm">Download My Card</span>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </motion.button>
-                  <p className="text-[9px] uppercase tracking-[0.4em] text-white/20 mt-6">
-                    Each generation creates a unique fragment of wisdom
-                  </p>
                 </div>
               </div>
 
-              {/* Hidden SVG for Export logic - Must be in DOM to be serialized */}
+              {/* Hidden SVG for Export logic */}
               <div className="hidden">
                 <svg
                   ref={svgRef}
@@ -285,12 +283,6 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
                       <stop offset="50%" stopColor={theme.secondary} />
                       <stop offset="100%" stopColor={theme.accent} />
                     </linearGradient>
-                    <style>{`
-                      @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-                      @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
-                      .anim-float { animation: float 6s ease-in-out infinite; }
-                      .anim-pulse { animation: pulse 3s ease-in-out infinite; }
-                    `}</style>
                   </defs>
                   
                   <rect width="1200" height="630" fill={theme.bg} />
@@ -306,40 +298,25 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
                     />
                   ))}
 
-                  <g transform="translate(100, 100)">
-                    <rect width="40" height="4" fill="url(#themeGradient)" rx="2" />
-                    <rect width="4" height="40" fill="url(#themeGradient)" rx="2" />
-                  </g>
-                  <g transform="translate(1100, 100) rotate(90)">
-                    <rect width="40" height="4" fill="url(#themeGradient)" rx="2" />
-                    <rect width="4" height="40" fill="url(#themeGradient)" rx="2" />
-                  </g>
-
                   <rect x="40" y="40" width="1120" height="550" fill="none" stroke="url(#themeGradient)" strokeWidth="1" strokeOpacity="0.4" rx="30" />
                   <rect x="60" y="60" width="1080" height="510" fill="none" stroke="url(#themeGradient)" strokeWidth="2" rx="20" />
 
-                  <text x="600" y="160" fontFamily="Cinzel, serif" fontSize="22" fill={theme.secondary} textAnchor="middle" letterSpacing="10" opacity="0.8">
-                    CELESTIAL VISION
+                  <text x="600" y="140" fontFamily="Cinzel, serif" fontSize="20" fill={theme.secondary} textAnchor="middle" letterSpacing="10" opacity="0.6">
+                    A NEW BEGINNING
                   </text>
 
-                  <text x="600" y="270" fontFamily="Cinzel, serif" fontSize="90" fontWeight="bold" fill="url(#themeGradient)" textAnchor="middle">
+                  <text x="600" y="240" fontFamily="Cinzel, serif" fontSize="90" fontWeight="bold" fill="url(#themeGradient)" textAnchor="middle">
                     HAPPY {year}
                   </text>
 
-                  {userName && (
-                    <text x="600" y="325" fontFamily="Cinzel, serif" fontSize="24" fill="white" fillOpacity="0.6" textAnchor="middle" letterSpacing="4">
-                      SPECIALLY FOR {userName.toUpperCase()}
-                    </text>
-                  )}
-
                   <text 
                     x="600" 
-                    y={userName ? 385 : 365} 
+                    y="340" 
                     fontFamily="Inter, sans-serif" 
-                    fontSize="30" 
+                    fontSize="32" 
                     fontStyle="italic" 
                     fill="white" 
-                    fillOpacity="0.9" 
+                    fillOpacity="0.95" 
                     textAnchor="middle"
                   >
                     {messageLines.map((line, idx) => (
@@ -349,10 +326,19 @@ export const GiftCardGenerator: React.FC<GiftCardGeneratorProps> = ({ initialMes
                     ))}
                   </text>
 
-                  <line x1="500" y1="530" x2="700" y2="530" stroke="url(#themeGradient)" strokeWidth="1" strokeOpacity="0.5" />
+                  {localUserName && (
+                    <text x="600" y="520" fontFamily="Cinzel, serif" fontSize="30" fill={theme.secondary} textAnchor="middle" letterSpacing="4">
+                      FROM {localUserName.toUpperCase()}
+                    </text>
+                  )}
+
+                  {/* Watermark */}
+                  <text x="1120" y="580" fontFamily="Cinzel, serif" fontSize="14" fill="white" fillOpacity="0.15" textAnchor="end" letterSpacing="2">
+                    GEORGE
+                  </text>
                   
-                  <text x="600" y="565" fontFamily="Cinzel, serif" fontSize="14" fill={theme.secondary} textAnchor="middle" letterSpacing="6" opacity="0.5">
-                    MAY YOUR HORIZON EXPAND INFINITELY
+                  <text x="600" y="570" fontFamily="Cinzel, serif" fontSize="12" fill={theme.secondary} textAnchor="middle" letterSpacing="6" opacity="0.4">
+                    THE HORIZON IS INFINITE
                   </text>
                 </svg>
               </div>
