@@ -11,7 +11,7 @@ import { GiftCardGenerator } from './components/GiftCardGenerator';
 import { calculateTimeLeft, getNextNewYear } from './utils/time';
 import { GEMINI_SYSTEM_PROMPT, THEME } from './constants';
 import { PageState, TimeLeft } from './types';
-import { Analytics } from '@vercel/analytics/next';
+
 
 const App: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft(getNextNewYear()));
@@ -321,7 +321,7 @@ const App: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      <Analytics />
+    
     </main>
   );
 };
