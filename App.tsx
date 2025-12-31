@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Sparkles, RefreshCw, UserCircle, PlayCircle } from 'lucide-react';
@@ -8,14 +7,15 @@ import { Curtain } from './components/Curtain';
 import { ShareButton } from './components/ShareButton';
 import { Fireworks } from './components/Fireworks';
 import { GiftCardGenerator } from './components/GiftCardGenerator';
-import { calculateTimeLeft, getNextNewYear } from './utils/time';
+import { calculateTimeLeft, getNextNewYear, isNewYearsDay } from './utils/time';
 import { GEMINI_SYSTEM_PROMPT, THEME } from './constants';
 import { PageState, TimeLeft } from './types';
 
 
 const App: React.FC = () => {
+  const initialNewYear = isNewYearsDay();
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft(getNextNewYear()));
-  const [pageState, setPageState] = useState<PageState>(PageState.COUNTDOWN);
+  const [pageState, setPageState] = useState<PageState>(initialNewYear ? PageState.CELEBRATION : PageState.COUNTDOWN);
   const [isRevealing, setIsRevealing] = useState(false);
   const [aiMessage, setAiMessage] = useState<string>("The magic in new beginnings is truly the most powerful of them all.");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -75,6 +75,11 @@ const App: React.FC = () => {
   }, [isRevealing, fetchNewMessage]);
 
   useEffect(() => {
+    if (initialNewYear) {
+      fetchNewMessage();
+      return;
+    }
+
     const timer = setInterval(() => {
       // Don't update if we are already celebrating
       if (pageState === PageState.CELEBRATION) return;
@@ -93,7 +98,7 @@ const App: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [pageState, isRevealing, handleReveal, isDemoActive]);
+  }, [pageState, isRevealing, handleReveal, isDemoActive, initialNewYear, fetchNewMessage]);
 
   // const startDemo = () => {
   //   setIsDemoActive(true);
@@ -181,7 +186,7 @@ const App: React.FC = () => {
                 className="space-y-12 w-full pt-12"
               >
                 <div className="space-y-4">
-                  <span className="text-[#d4af37] font-cinzel text-sm md:text-xl tracking-[0.8em] uppercase block">A New Horizon Awaits</span>
+                  <span className="text-[#d4af37] font-cinzel text-sm md:text-xl tracking-[0.8em] uppercase block">Happy New year</span>
                   <h1 className="text-6xl md:text-[10rem] font-cinzel font-bold bg-gradient-to-b from-[#fde047] via-[#d4af37] to-[#92400e] bg-clip-text text-transparent drop-shadow-[0_20px_20px_rgba(0,0,0,0.6)] leading-none">
                     {currentYear}
                   </h1>

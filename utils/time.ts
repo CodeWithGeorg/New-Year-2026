@@ -1,6 +1,12 @@
 
 import { TimeLeft } from '../types';
 
+export const isNewYearsDay = (): boolean => {
+  const now = new Date();
+  // Returns true if today is January 1st
+  return now.getMonth() === 0 && now.getDate() === 1;
+};
+
 export const calculateTimeLeft = (targetDate: Date): TimeLeft => {
   const difference = targetDate.getTime() - new Date().getTime();
   
@@ -19,5 +25,10 @@ export const calculateTimeLeft = (targetDate: Date): TimeLeft => {
 
 export const getNextNewYear = (): Date => {
   const now = new Date();
-  return new Date(now.getFullYear() + 1, 0, 1, 0, 0, 0);
+  const currentYear = now.getFullYear();
+  
+  // If we are currently in Jan 1st, the target for the "countdown" logic (if we were to show one) 
+  // is actually the one that just passed or the next one.
+  // But conceptually, the countdown always targets the upcoming Jan 1st.
+  return new Date(currentYear + 1, 0, 1, 0, 0, 0);
 };
