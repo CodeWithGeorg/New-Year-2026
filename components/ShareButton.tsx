@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Share2, Check, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { text } from 'stream/consumers';
 
 export const ShareButton: React.FC = () => {
   const [copied, setCopied] = useState(false);
@@ -9,7 +10,8 @@ export const ShareButton: React.FC = () => {
   const handleShare = async () => {
     const shareData = {
       title: 'Happy New Year!',
-      text: `Let's welcome ${new Date().getFullYear() + 1} together with hope and joy! Check out this beautiful New Year countdown.`,
+      // text: `Let's welcome ${new Date().getFullYear() - 1} together with hope and joy! Check out this beautiful New Year countdown.`,
+      text: `Let's welcome 2026 together with hope and joy! Check out this beautiful New Year countdown.`,
       url: window.location.href,
     };
 
